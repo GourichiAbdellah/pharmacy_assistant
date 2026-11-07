@@ -1,4 +1,4 @@
-# Assistant médicaments — nouvelle base
+# Assistant médicaments : nouvelle base
 
 Prototype indépendant avec DeepSeek, données Azure SQL, transcription locale MoulSot
 et lecture des photos de boîtes avec Azure Vision OCR.
