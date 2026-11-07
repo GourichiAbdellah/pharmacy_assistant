@@ -1,0 +1,24 @@
+.bubble.markdown-body{white-space:normal;min-width:0}
+.markdown-body>:first-child{margin-top:0}
+.markdown-body>:last-child{margin-bottom:0}
+.markdown-body p{margin:.65em 0}
+.markdown-body ul,.markdown-body ol{margin:.65em 0;padding-inline-start:1.5em}
+.markdown-body li{margin:.2em 0}
+.markdown-body li>p{margin:.25em 0}
+.markdown-body h1,.markdown-body h2,.markdown-body h3,
+.markdown-body h4,.markdown-body h5,.markdown-body h6{font-size:1.05em;line-height:1.45;margin:1em 0 .4em;letter-spacing:normal}
+.markdown-body strong{font-weight:650}
+.markdown-body a{color:#215f4b;text-decoration:underline;text-underline-offset:3px}
+.markdown-body blockquote{margin:.75em 0;padding:.1em .9em;border-inline-start:3px solid #b8cebd;color:#52675b}
+.markdown-body code{font-family:ui-monospace,monospace;font-size:.9em;background:#f2f4ef;padding:.1em .3em;border-radius:4px}
+.markdown-body pre{white-space:pre;overflow-x:auto;padding:12px;background:#f2f4ef;border-radius:8px;max-width:100%}
+.markdown-body pre code{padding:0;background:none}
+.markdown-body hr{border:0;border-top:1px solid #e2e4dc;margin:1em 0}
+.markdown-body .table-wrap{max-width:100%;overflow-x:auto;margin:.85em 0;border:1px solid #dce4d9;border-radius:9px;overscroll-behavior-x:contain}
+.markdown-body table{border-collapse:collapse;width:100%;min-width:26rem;font-size:.92em;line-height:1.5}
+.markdown-body th,.markdown-body td{padding:10px 12px;border-bottom:1px solid #e2e8df;text-align:start;vertical-align:top;overflow-wrap:normal}
+.markdown-body th{background:#edf3e9;font-weight:650}
+.markdown-body tbody tr:last-child td{border-bottom:0}
+.markdown-body tbody tr:nth-child(even){background:#fafbf8}
+.markdown-body .table-wrap:focus-visible,.markdown-body a:focus-visible{outline:2px solid #396954;outline-offset:3px}
+@media(max-width:600px){.markdown-body th,.markdown-body td{padding:8px 10px}.controls{flex-wrap:wrap}}

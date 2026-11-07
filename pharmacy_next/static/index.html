@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assistant médicaments · Prototype</title>
+<link rel="stylesheet" href="/static/markdown.css?v=20261020">
+<link rel="stylesheet" href="/static/pharmacies.css?v=20261025-availability-v2">
+<style>
+:root{font-family:system-ui,sans-serif;color:#213b35;background:#f7f4ed;font-size:16px}*{box-sizing:border-box}body{margin:0}main{max-width:900px;margin:auto;height:100dvh;display:flex;flex-direction:column;padding:22px}header{display:flex;justify-content:space-between;align-items:center;gap:15px;border-bottom:1px solid #d8ded5;padding-bottom:16px}h1{font-size:22px;margin:0 0 6px;letter-spacing:-.5px}.subtitle{font-size:13px;color:#68766e;margin:0}.tag{font-size:11px;background:#e5ece3;padding:5px 8px;border-radius:20px;display:inline-block;margin-bottom:7px}button,.upload{font:inherit;cursor:pointer;border:1px solid #d3dcd3;border-radius:12px;padding:10px 14px;background:#fff;color:#213b35}button:disabled{opacity:.5;cursor:wait}#messages{flex:1;overflow:auto;padding:22px 3px;scroll-behavior:smooth}.welcome{max-width:590px;margin:8vh auto;text-align:center}.welcome h2{font-size:29px;font-weight:550;margin:0 0 15px}.welcome p{color:#6a756c;line-height:1.65}.chips{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-top:24px}.chips button{font-size:13px;background:#efece3}.bubble{white-space:pre-wrap;line-height:1.65;padding:15px 18px;border-radius:17px;margin:12px 0;max-width:92%;overflow-wrap:anywhere}.user{background:#e2eadd;margin-left:auto;width:fit-content}.assistant{background:white;border:1px solid #e2e4dc}.sources{font-size:12px;color:#617369;margin:0 10px 20px;white-space:pre-wrap}.sources summary{cursor:pointer}form{border:1px solid #ccd5c9;background:#fff;border-radius:18px;padding:12px;box-shadow:0 5px 25px #183b3510}textarea{font:inherit;width:100%;border:0;resize:vertical;min-height:54px;max-height:140px;padding:6px;color:#213b35;outline:none}.controls{display:flex;gap:8px;align-items:center}.send{margin-left:auto;background:#244d40;color:white;border:0}.recording{background:#fee6da;color:#8c3017}#status{min-height:22px;font-size:13px;color:#8b452e;padding:5px 2px}.footnote{font-size:11px;text-align:center;color:#758174;margin:10px 0 0}input[type=file]{display:none}a{color:inherit}@media(max-width:600px){main{padding:12px}.bubble{max-width:97%}h1{font-size:18px}.controls button{font-size:13px;padding:9px 10px}.welcome h2{font-size:25px}}
+[hidden]{display:none!important}.controls{flex-wrap:wrap}.photo-panel{display:flex;align-items:center;gap:12px;padding:8px;border-bottom:1px solid #e2e4dc;margin-bottom:8px}.photo-panel img{max-width:88px;max-height:78px;border-radius:8px}.photo-panel p{margin:3px 0;font-size:12px;color:#617369}.photo-panel button{margin-left:auto}.photo-panel strong{font-size:13px;overflow-wrap:anywhere}.photo-chat{display:block;max-width:220px;max-height:200px;border-radius:10px;margin-top:8px}.ocr-text{white-space:pre-wrap;font:inherit;overflow-wrap:anywhere}
+</style>
+<main>
+<header><div><span class="tag">Prototype local</span><h1>Parlons de vos médicaments</h1><p class="subtitle">Darija · Français · العربية</p></div><button id="reset">Nouvelle discussion</button></header>
+<section id="messages" aria-live="polite"><div class="welcome" id="welcome"><h2>Une question sur un médicament ?</h2><p>Demandez son prix, comparez les présentations ou consultez les informations de remboursement. Vous pouvez aussi envoyer un vocal ou une photo de la boîte.</p><div class="chips"><button data-prompt="Ch7al taman Biotic Plus ?">Ch7al taman Biotic Plus ?</button><button data-prompt="C'est quoi un comprimé effervescent ?">Comprendre une forme</button></div></div></section>
+<div id="status" role="status"></div>
+<form id="composer"><div id="photo-panel" class="photo-panel" hidden><img id="photo-preview" alt="Photo de la boîte à envoyer"><div><strong id="photo-name"></strong><p>JPG ou PNG · 10 Mo maximum</p></div><button id="remove-photo" type="button" aria-label="Retirer la photo">Retirer</button></div><textarea id="message" dir="auto" maxlength="5000" placeholder="Écrivez votre question…" aria-label="Votre message"></textarea><div class="controls"><button type="button" id="record">Enregistrer</button><button type="button" id="upload">Joindre un vocal</button><input id="audio" type="file" accept="audio/*,.ogg,.webm,.m4a"><button type="button" id="upload-photo">Joindre une photo</button><input id="photo" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png"><button type="submit" id="send" class="send">Envoyer</button></div></form>
+<p class="footnote">Informations issues du catalogue CNOPS/CNSS et des fiches Asafar. Elles ne remplacent pas un avis médical.</p>
+</main>
+<script>window.addEventListener('error',function(e){if(e.target&&e.target.tagName==='SCRIPT'){var n=document.getElementById('desk-error')||document.getElementById('status');if(n)n.textContent='Chargement incomplet. Rechargez la page avec Ctrl+F5 pour charger la version à jour.';}},true);</script><script src="/static/vendor/marked.umd.js?v=18.1.1"></script>
+<script src="/static/vendor/purify.min.js?v=3.4.17"></script>
+<script src="/static/markdown.js?v=20261020"></script>
+<script src="/static/pharmacy-common.js?v=20261025-availability-v2"></script>
+<script src="/static/human-relay.js?v=20261025-availability-v2"></script>
+<script src="/static/pharmacies.js?v=20261025-availability-v2"></script>
+<script>
+const $=id=>document.getElementById(id);
+let session=null,busy=false,recorder=null,recordTimer=null,pendingImage=null,previewUrl=null;
+const status=message=>{$('status').textContent=message;};
+function lock(value){
+  busy=value;
+  for(const id of ['send','upload-photo','reset','remove-photo','message'])$(id).disabled=value;
+  for(const id of ['upload','record'])$(id).disabled=value||Boolean(pendingImage);
+  window.pharmacyUi.syncComposer(value,Boolean(pendingImage));
+}
+function bubble(role,text){
+  $('welcome')?.remove();const div=document.createElement('div');div.className='bubble '+role;
+  div.dir='auto';
+  if(role==='assistant'&&typeof window.renderAssistantMessage==='function')window.renderAssistantMessage(div,text);
+  else div.textContent=text;
+  $('messages').append(div);div.scrollIntoView({block:'end'});return div;
+}
+function sources(items){
+  if(!items?.length)return;const details=document.createElement('details');details.className='sources';
+  const summary=document.createElement('summary');summary.textContent='Sources consultées ('+items.length+')';details.append(summary);
+  const body=document.createElement('div');body.textContent=items.map(s=>`${s.source} · ${s.label||''} · ${s.presentation||''} · Réf. ${s.id}`).join('\n');
+  details.append(body);$('messages').append(details);
+}
+function imageReading(result){
+  const details=document.createElement('details');details.className='sources';
+  const summary=document.createElement('summary');summary.textContent='Texte lu sur la photo';details.append(summary);
+  const text=document.createElement('div');text.className='ocr-text';text.dir='auto';
+  text.textContent=result.text||'Aucun texte lisible.';details.append(text);$('messages').append(details);
+}
+function clearPhoto(){
+  if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=null;pendingImage=null;
+  $('photo').value='';$('photo-preview').removeAttribute('src');$('photo-panel').hidden=true;lock(busy);
+}
+function showPhoto(file){
+  if(file.size===0||file.size>10*1024*1024){status('Choisis une photo non vide de moins de 10 Mo.');return;}
+  if(!/\.(jpe?g|png)$/i.test(file.name)&&!['image/jpeg','image/png'].includes(file.type)){
+    status('Choisis une photo JPG ou PNG.');return;
+  }
+  clearPhoto();pendingImage=file;previewUrl=URL.createObjectURL(file);
+  $('photo-preview').src=previewUrl;$('photo-name').textContent=file.name;$('photo-panel').hidden=false;
+  status('Tu peux ajouter une question puis cliquer sur Envoyer.');lock(false);$('message').focus();
+}
+async function send(payload,kind='text',question=''){
+  if(busy)return;lock(true);
+  status(kind==='audio'?'Transcription puis recherche…':kind==='image'?'Lecture de la photo puis recherche…':'Réponse en préparation…');
+  try{
+    if(await window.pharmacyUi.interceptMessage(payload,kind)){
+      if(kind==='text')$('message').value='';status('');return;
+    }
+    let response,userBubble;
+    const pharmacyOptions=await window.pharmacyUi.chatOptions();
+    if(kind==='text'){
+      userBubble=bubble('user',payload);
+      response=await fetch('/api/v1/chat',{method:'POST',headers:{'Content-Type':'application/json',...pharmacyOptions.headers},body:JSON.stringify({message:payload,session_id:session,location:pharmacyOptions.location})});
+    }else{
+      userBubble=bubble('user',kind==='image'?(question||'Photo de boîte'):'Vocal envoyé…');
+      if(kind==='image'){
+        const img=document.createElement('img');const url=URL.createObjectURL(payload);
+        img.className='photo-chat';img.alt='Photo envoyée';img.onload=img.onerror=()=>URL.revokeObjectURL(url);img.src=url;userBubble.append(img);
+      }
+      const data=new FormData();data.append('file',payload,payload.name||(kind==='audio'?'vocal.webm':'boite.jpg'));
+      if(session)data.append('session_id',session);if(kind==='image')data.append('message',question);
+      if(pharmacyOptions.location)data.append('location',JSON.stringify(pharmacyOptions.location));
+      response=await fetch('/api/v1/chat/'+kind,{method:'POST',headers:pharmacyOptions.headers,body:data});
+    }
+    const result=await response.json();
+    if(!response.ok){
+      const message=response.status===410?'La conversation a expiré. Clique sur Nouvelle discussion.':
+        typeof result.detail==='string'?result.detail:'La demande n’a pas pu être traitée.';
+      throw new Error(message);
+    }
+    session=result.session_id;
+    if(result.transcription)userBubble.textContent='Vocal : '+result.transcription.text;
+    if(result.image_analysis)imageReading(result.image_analysis);
+    bubble('assistant',result.answer);sources(result.sources);window.pharmacyUi.consume(result);status('');
+    if(kind!=='audio')$('message').value='';if(kind==='image')clearPhoto();
+  }catch(error){status(error.message||'Connexion interrompue.');}
+  finally{lock(false);window.pharmacyUi.syncComposer();$('audio').value='';}
+}
+$('composer').addEventListener('submit',event=>{
+  event.preventDefault();if(recorder?.state==='recording'){status('Termine ton enregistrement avant d’envoyer un message.');return;}
+  const text=$('message').value.trim();if(pendingImage)send(pendingImage,'image',text);else if(text)send(text);
+});
+$('message').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();$('composer').requestSubmit();}});
+$('upload').onclick=()=>{if(recorder?.state!=='recording'&&!pendingImage)$('audio').click();};
+$('audio').onchange=()=>{const file=$('audio').files[0];if(file){if(file.size>20*1024*1024){status('Le fichier dépasse 20 Mo.');return;}send(file,'audio');}};
+$('upload-photo').onclick=()=>{if(recorder?.state==='recording'){status('Termine le vocal avant de joindre une photo.');return;}$('photo').click();};
+$('photo').onchange=()=>{const file=$('photo').files[0];if(file)showPhoto(file);};
+$('remove-photo').onclick=()=>{clearPhoto();status('');};
+document.querySelectorAll('[data-prompt]').forEach(button=>button.onclick=()=>{if(!busy){$('message').value=button.dataset.prompt;$('message').focus();}});
+$('reset').onclick=async()=>{
+  if(window.pharmacyUi.isHumanActive()){status('Clique sur « Revenir à l’assistant » avant de démarrer une nouvelle discussion.');return;}
+  if(recorder?.state==='recording'){status('Termine le vocal avant de changer de discussion.');return;}
+  if(session){try{const r=await fetch('/api/v1/sessions/'+session,{method:'DELETE',headers:window.pharmacyUi.headers()});if(!r.ok){status('Impossible de réinitialiser pour le moment.');return;}}catch{status('Connexion interrompue.');return;}}
+  session=null;window.pharmacyUi.reset();clearPhoto();$('messages').replaceChildren();$('message').value='';status('Nouvelle discussion.');
+};
+$('record').onclick=async()=>{
+  if(recorder?.state==='recording'){recorder.stop();return;}
+  if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){status('Enregistrement indisponible ici. Utilise Joindre un vocal.');return;}
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});const parts=[];recorder=new MediaRecorder(stream);
+    recorder.ondataavailable=event=>{if(event.data.size)parts.push(event.data);};
+    recorder.onstop=()=>{
+      clearTimeout(recordTimer);stream.getTracks().forEach(track=>track.stop());$('record').textContent='Enregistrer';$('record').classList.remove('recording');
+      const type=recorder.mimeType;const ext=type.includes('mp4')?'m4a':type.includes('ogg')?'ogg':'webm';send(new File(parts,'vocal.'+ext,{type}),'audio');
+    };
+    recorder.start();$('record').textContent='Terminer';$('record').classList.add('recording');
+    status('Enregistrement en cours — arrêt automatique après 25 secondes.');recordTimer=setTimeout(()=>{if(recorder.state==='recording')recorder.stop();},25000);
+  }catch{status('Microphone inaccessible. Tu peux joindre un fichier audio.');}
+};
+</script>
+</html>

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pharmacy-assistant-next"
+version = "0.1.0"
+description = "Assistant conversationnel médicaments, DeepSeek, Azure SQL et MoulSot"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<1", "uvicorn>=0.30,<1", "httpx>=0.27,<1",
+  "openai>=2,<3", "pydantic>=2,<3", "python-dotenv>=1,<2",
+  "python-multipart>=0.0.18,<1", "scikit-learn>=1.5,<2",
+  "Pillow>=11,<13", "tzdata>=2025.2",
+]
+
+[project.optional-dependencies]
+azure = ["mssql-python>=1.6,<2"]
+test = ["pytest>=8,<10"]
+
+[tool.setuptools.packages.find]
+include = ["pharmacy_next*"]
+
+[tool.setuptools.package-data]
+pharmacy_next = ["static/*.html", "static/*.js", "static/*.css", "static/vendor/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
